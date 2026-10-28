@@ -1,49 +1,117 @@
-# SignalDesk — Incident Management System
+# SignalDesk Pro — Advanced Incident Management System
 
-SignalDesk is a Java-based incident management backend application developed as part of my SWYNEX Java Developer Internship.
+SignalDesk Pro is a Java-based incident management REST API built with Spring Boot and MySQL. It enables users to create, view, update, delete, search, and filter incidents, with support for pagination, sorting, input validation, and dashboard statistics.
 
-The application provides REST APIs to create, retrieve, update, and delete incident records using Spring Boot and MySQL.
+This project demonstrates object-oriented programming principles, layered application architecture, RESTful API development, relational database integration, and backend exception handling.
 
 ## Features
 
-- Create and retrieve incident records through REST APIs
-- Store incident data in a MySQL database
-- Use Spring Data JPA and Hibernate for database operations
-- Validate required fields and limit incident title length
-- Handle validation errors with structured JSON responses
-- Handle missing incident records with appropriate error responses
-- Follow a layered architecture using Controller, Service, Repository, and Entity classes
+- **Incident Management (CRUD):** Create, retrieve, update, and delete incidents.
+- **Search:** Search incidents by title or description using a keyword.
+- **Status Filtering:** Retrieve incidents by status, such as OPEN or RESOLVED.
+- **Priority Filtering:** Filter incidents by priority, such as HIGH, MEDIUM, or LOW.
+- **Category Filtering:** Retrieve incidents by category.
+- **Pagination:** Retrieve records in manageable pages.
+- **Sorting:** Sort paginated incidents by supported fields in ascending or descending order.
+- **Dashboard Statistics:** View total incidents, open incidents, resolved incidents, and high-priority incidents.
+- **Input Validation:** Validate required fields and title length.
+- **Exception Handling:** Handle invalid requests and incidents that cannot be found.
+- **MySQL Persistence:** Store incident records in a relational database.
 
 ## Technology Stack
 
-- Java
-- Spring Boot
+- Java 22
+- Spring Boot 4.1.2
 - Spring Web
 - Spring Data JPA
-- Hibernate
-- MySQL
+- Hibernate ORM
+- MySQL 9.2
 - Jakarta Bean Validation
 - Maven
+- IntelliJ IDEA
 - Postman
+- Git and GitHub
 
-## Project Structure
+## Project Architecture
+
+The application follows a layered architecture to separate API handling, business logic, and database access.
 
 ```text
-com.signaldesk
-├── controller
+src/main/java/com/signaldesk/
+├── controller/
 │   └── IncidentController.java
-├── entity
+├── entity/
 │   └── Incident.java
-├── exception
-│   └── GlobalExceptionHandler.java
-├── repository
+├── repository/
 │   └── IncidentRepository.java
-├── service
+├── service/
 │   └── IncidentService.java
-└── SignaldeskApplication.java
+└── exception/
+    └── GlobalExceptionHandler.java
+```
+
+- **Controller:** Exposes REST endpoints and handles HTTP requests.
+- **Service:** Implements incident management, searching, filtering, pagination, and statistics logic.
+- **Repository:** Uses Spring Data JPA to communicate with MySQL.
+- **Entity:** Represents incident records stored in the database.
+- **Exception Handler:** Provides centralized exception handling where configured.
+
+## Prerequisites
+
+Install the following before running the application:
+
+- Java 22 JDK
+- MySQL Server
+- Maven, or the Maven Wrapper included in the project
+- IntelliJ IDEA or another Java IDE
+- Postman for API testing
+
+## Database Configuration
+
+Create the database in MySQL:
+
+```sql
+CREATE DATABASE signaldesk_db;
+```
+
+Configure the database connection in `src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/signaldesk_db
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+Set the `DB_USERNAME` and `DB_PASSWORD` environment variables to your local MySQL credentials before starting the application.
+
+Keep database passwords and other secrets out of public source control.
+
+Hibernate can create or update the required table structure when the application starts with the configuration above.
+
+## Run the Application
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/goswamirahu/SWYNEX-SignalDesk.git
+```
+
+2. Open the project in IntelliJ IDEA.
+3. Configure the MySQL database and environment variables.
+4. Run the main Spring Boot application class, `SignaldeskApplication`.
+5. The API will be available at:
+
+```text
+http://localhost:8080
 ```
 
 ## REST API Endpoints
+
+Base URL: `http://localhost:8080/api/incidents`
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -52,43 +120,131 @@ com.signaldesk
 | GET | `/api/incidents/{id}` | Retrieve an incident by ID |
 | PUT | `/api/incidents/{id}` | Update an incident |
 | DELETE | `/api/incidents/{id}` | Delete an incident |
+| GET | `/api/incidents/search?keyword=login` | Search by title or description |
+| GET | `/api/incidents/filter/status?status=OPEN` | Filter by status |
+| GET | `/api/incidents/filter/priority?priority=HIGH` | Filter by priority |
+| GET | `/api/incidents/filter/category?category=Authentication` | Filter by category |
+| GET | `/api/incidents/page?page=0&size=5&sortBy=id&direction=desc` | Paginate and sort incidents |
+| GET | `/api/incidents/dashboard` | Retrieve dashboard statistics |
 
-## Incident Fields
+## Sample API Request
 
-Incident records include fields such as ID, title, description, category, priority, and status.
+### Create an Incident
+
+**Request**
+
+```http
+POST http://localhost:8080/api/incidents
+Content-Type: application/json
+```
+
+**Request Body**
+
+```json
+{
+  "title": "Login API failure",
+  "description": "Users are unable to log in to the application",
+  "category": "Authentication",
+  "priority": "HIGH",
+  "status": "OPEN"
+}
+```
+
+A successful creation returns HTTP `201 Created` with the saved incident details.
+
+### Search Incidents
+
+```http
+GET http://localhost:8080/api/incidents/search?keyword=login
+```
+
+Returns incidents whose titles or descriptions contain the supplied keyword.
+
+### Dashboard Statistics
+
+```http
+GET http://localhost:8080/api/incidents/dashboard
+```
+
+Example response structure:
+
+```json
+{
+  "totalIncidents": 5,
+  "openIncidents": 3,
+  "resolvedIncidents": 1,
+  "highPriorityIncidents": 2
+}
+```
+
+The values above are illustrative for a database containing the corresponding five records. Actual values depend on the current database contents.
+
+### Pagination and Sorting
+
+```http
+GET http://localhost:8080/api/incidents/page?page=0&size=5&sortBy=id&direction=desc
+```
+
+- `page`: Zero-based page number.
+- `size`: Number of records per page, from 1 to 100.
+- `sortBy`: Supported fields include `id`, `title`, `category`, `priority`, and `status`.
+- `direction`: `asc` or `desc`.
+
+## Validation and Error Handling
+
+The application uses Jakarta Bean Validation to enforce required incident fields and the maximum title length. The service layer also handles incidents that cannot be found and validates pagination parameters.
+
+Requests should be checked using Postman to verify successful responses and appropriate error handling.
+
+## Database Verification
+
+Incident records can be inspected directly in MySQL:
+
+```sql
+USE signaldesk_db;
+
+SELECT * FROM incidents;
+
+SELECT COUNT(*) AS total_incidents
+FROM incidents;
+```
+
+These queries help verify that incident records are persisted in the database.
 
 ## Testing
 
-The following were tested using Postman and MySQL:
-
-- Creating an incident successfully
-- Retrieving incident records
-- Rejecting requests with missing required fields
-- Confirming that incident data is stored in MySQL
-
-## Database Configuration
-
-Create a MySQL database named `signaldesk_db` and configure the database connection in `application.properties`.
-
-For security, keep database credentials outside the source code by using environment variables.
+The API has been exercised using Postman for incident management and the added search, filtering, pagination, sorting, and dashboard endpoints. MySQL queries can be used to verify stored records and dashboard-related counts.
 
 ## Learning Outcomes
 
-This project strengthened my practical understanding of:
+This project demonstrates practical experience with:
 
-- Java backend development
-- REST API design
-- Spring Boot application architecture
-- Database integration using MySQL
+- Java object-oriented programming
+- Spring Boot REST API development
+- Layered backend architecture
+- MySQL database integration
+- Spring Data JPA and Hibernate
 - Input validation and exception handling
-- Testing APIs using Postman
+- Searching, filtering, pagination, and sorting
+- API testing with Postman
+- Git and GitHub version control
 
-## Internship
+## Future Enhancements
 
-Developed as part of the SWYNEX Java Developer Internship.
+- Authentication and role-based authorization
+- Incident history and audit logging
+- Automated unit and integration tests
+- Swagger/OpenAPI documentation
+- A web-based dashboard
 
 ## Author
 
-Rahul Giri
+**Rahul Giri**
+
+Java Backend Developer | Spring Boot | REST APIs | MySQL
 
 GitHub: https://github.com/goswamirahu
+
+## Project Repository
+
+https://github.com/goswamirahu/SWYNEX-SignalDesk
